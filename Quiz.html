@@ -1,0 +1,609 @@
+```html
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>জীববিজ্ঞান ও পুষ্টিবিজ্ঞান কুইজ</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { 
+            font-family: 'Kalpurush', 'SolaimanLipi', Arial, sans-serif; 
+            background-color: #f0fdf4; 
+        }
+        .hidden-section { display: none !important; }
+        .sticky-header { position: sticky; top: 0; z-index: 50; }
+        
+        /* Modal Animation */
+        .modal-enter { animation: fadeIn 0.2s ease-out forwards; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+    </style>
+</head>
+<body class="text-gray-800 antialiased selection:bg-green-200">
+
+    <!-- Custom Loading Overlay -->
+    <div id="loading-overlay" class="fixed inset-0 bg-white/80 backdrop-blur-sm z-[100] flex flex-col items-center justify-center hidden-section">
+        <div class="animate-spin rounded-full h-12 w-12 border-4 border-green-600 border-t-transparent"></div>
+        <p id="loading-text" class="mt-4 text-green-700 font-bold text-lg">লোড হচ্ছে...</p>
+    </div>
+
+    <!-- Custom Alert Modal -->
+    <div id="alert-modal" class="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center hidden-section">
+        <div class="bg-white p-6 rounded-xl shadow-2xl max-w-sm w-full mx-4 modal-enter text-center">
+            <div class="text-red-500 mb-4">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+            </div>
+            <h3 class="text-lg font-bold mb-2 text-gray-800" id="alert-title">সতর্কতা</h3>
+            <p class="text-gray-600 mb-6" id="alert-message"></p>
+            <button onclick="closeModal('alert-modal')" class="w-full bg-green-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-700">ঠিক আছে</button>
+        </div>
+    </div>
+
+    <!-- Admin Password Modal -->
+    <div id="admin-modal" class="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center hidden-section">
+        <div class="bg-white p-6 rounded-xl shadow-2xl max-w-sm w-full mx-4 modal-enter text-center">
+            <h3 class="text-xl font-bold mb-4 text-gray-800">অ্যাডমিন লগইন</h3>
+            <p class="text-sm text-gray-600 mb-4">প্যানেলে প্রবেশ করতে পাসওয়ার্ড দিন</p>
+            <input type="password" id="admin-pass-input" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 mb-4 text-center" placeholder="পাসওয়ার্ড">
+            <div class="flex gap-2">
+                <button onclick="closeModal('admin-modal')" class="flex-1 bg-gray-200 text-gray-800 font-bold py-2 rounded-lg hover:bg-gray-300">বাতিল</button>
+                <button onclick="verifyAdmin()" class="flex-1 bg-gray-800 text-white font-bold py-2 rounded-lg hover:bg-gray-900">প্রবেশ করুন</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Submit Confirmation Modal -->
+    <div id="submit-modal" class="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center hidden-section">
+        <div class="bg-white p-6 rounded-xl shadow-2xl max-w-sm w-full mx-4 modal-enter text-center">
+            <h3 class="text-xl font-bold mb-2 text-gray-800">ফলাফল জমা দিন</h3>
+            <p class="text-gray-600 mb-6">আপনি কি নিশ্চিত যে আপনি পরীক্ষা শেষ করতে চান?</p>
+            <div class="flex gap-2">
+                <button onclick="closeModal('submit-modal')" class="flex-1 bg-gray-200 text-gray-800 font-bold py-2 rounded-lg hover:bg-gray-300">না, ফিরে যান</button>
+                <button onclick="processSubmission()" class="flex-1 bg-green-600 text-white font-bold py-2 rounded-lg hover:bg-green-700">হ্যাঁ, জমা দিন</button>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Start Screen -->
+    <div id="start-screen" class="min-h-screen flex items-center justify-center p-4">
+        <div class="bg-white p-8 rounded-2xl shadow-xl max-w-md w-full text-center border-t-4 border-green-500">
+            <h1 class="text-3xl font-extrabold text-green-700 mb-2">কুইজ প্রতিযোগিতা</h1>
+            <p class="text-gray-500 mb-6 font-medium">জীববিজ্ঞান ও পুষ্টিবিজ্ঞান</p>
+            
+            <div class="bg-green-50 rounded-lg p-4 mb-6 text-sm text-green-800 text-left space-y-2">
+                <p>📌 <strong>মোট প্রশ্ন:</strong> ৩০ টি</p>
+                <p>⏳ <strong>সময়:</strong> ২০ মিনিট</p>
+                <p>⚠️ একবার শুরু করলে পেজ রিলোড দিলেও সময় চলতে থাকবে।</p>
+            </div>
+
+            <input type="text" id="student-name" placeholder="আপনার পুরো নাম লিখুন..." class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 mb-4 transition-colors" required>
+            
+            <button onclick="attemptStartQuiz()" class="w-full bg-green-600 text-white font-bold py-3 px-4 rounded-xl hover:bg-green-700 active:scale-95 transition-all shadow-md text-lg">কুইজ শুরু করুন</button>
+            
+            <div class="mt-8 border-t pt-4">
+                <button onclick="openAdminPrompt()" class="text-sm text-gray-400 hover:text-gray-800 transition-colors flex items-center justify-center gap-1 mx-auto">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
+                    এডমিন প্যানেল
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quiz Screen -->
+    <div id="quiz-screen" class="hidden-section min-h-screen flex flex-col pb-10">
+        <!-- Sticky Timer Header -->
+        <div class="bg-white shadow-md p-4 flex justify-between items-center sticky-header border-b-2 border-green-500">
+            <div class="font-bold text-md md:text-lg text-gray-700 flex items-center gap-2">
+                <div class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm" id="display-name">নাম</div>
+            </div>
+            <div class="font-mono font-bold text-2xl text-red-600 flex items-center gap-2 bg-red-50 px-4 py-1 rounded-full border border-red-100">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                <span id="timer-display">20:00</span>
+            </div>
+        </div>
+
+        <!-- Questions Container -->
+        <div class="flex-grow p-4 md:p-6 max-w-4xl mx-auto w-full">
+            <div id="questions-container" class="space-y-6"></div>
+            <button onclick="promptSubmit()" class="mt-10 w-full bg-gradient-to-r from-green-600 to-green-500 text-white font-bold py-4 px-4 rounded-xl hover:from-green-700 hover:to-green-600 transition-all text-xl shadow-xl active:scale-[0.98]">ফলাফল জমা দিন (Submit)</button>
+        </div>
+    </div>
+
+    <!-- Result Screen -->
+    <div id="result-screen" class="hidden-section min-h-screen p-4 md:p-8 max-w-4xl mx-auto w-full">
+        <div class="bg-white p-8 rounded-2xl shadow-xl mb-8 text-center border-t-8 border-green-500 relative overflow-hidden">
+            <!-- decorative bg -->
+            <div class="absolute -top-10 -right-10 w-32 h-32 bg-green-50 rounded-full blur-2xl"></div>
+            
+            <h2 class="text-3xl font-black text-gray-800 mb-2 relative z-10">আপনার ফলাফল</h2>
+            <p id="result-name-display" class="text-xl text-green-700 font-bold mb-6 relative z-10"></p>
+            
+            <div class="flex flex-col md:flex-row justify-center gap-4 md:gap-8 mb-6 relative z-10">
+                <div class="bg-green-50 p-6 rounded-xl border border-green-100 flex-1">
+                    <p class="text-sm text-green-600 font-bold mb-1">প্রাপ্ত নম্বর</p>
+                    <p id="result-score-display" class="text-5xl font-black text-green-700">0/30</p>
+                </div>
+                <div class="bg-blue-50 p-6 rounded-xl border border-blue-100 flex-1">
+                    <p class="text-sm text-blue-600 font-bold mb-1">সময় লেগেছে</p>
+                    <p id="result-time-display" class="text-3xl font-bold text-blue-800 mt-2">00:00</p>
+                </div>
+            </div>
+            
+            <button onclick="window.location.reload()" class="relative z-10 mt-2 bg-gray-800 text-white font-bold py-3 px-8 rounded-xl hover:bg-gray-900 transition-colors">হোমে ফিরে যান</button>
+        </div>
+
+        <div class="flex items-center gap-2 mb-6 border-b pb-2">
+            <h3 class="text-2xl font-bold text-gray-800">উত্তরমালা ও ব্যাখ্যা</h3>
+        </div>
+        <div id="review-container" class="space-y-6"></div>
+    </div>
+
+    <!-- Admin Screen -->
+    <div id="admin-screen" class="hidden-section min-h-screen p-4 md:p-8 max-w-5xl mx-auto w-full">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4 bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+            <div>
+                <h2 class="text-2xl font-black text-gray-800">অ্যাডমিন ড্যাশবোর্ড</h2>
+                <p class="text-gray-500 text-sm">পরীক্ষার্থীদের তালিকা ও ফলাফল</p>
+            </div>
+            <button onclick="window.location.reload()" class="bg-gray-100 text-gray-700 font-bold py-2 px-6 rounded-lg hover:bg-gray-200 transition-colors">লগআউট</button>
+        </div>
+        
+        <div class="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse whitespace-nowrap">
+                    <thead>
+                        <tr class="bg-gray-50 text-gray-700 text-sm uppercase tracking-wider">
+                            <th class="p-4 border-b font-bold">নাম</th>
+                            <th class="p-4 border-b font-bold text-center">নম্বর (৩০)</th>
+                            <th class="p-4 border-b font-bold text-center">সময়</th>
+                            <th class="p-4 border-b font-bold text-right">তারিখ ও সময়</th>
+                        </tr>
+                    </thead>
+                    <tbody id="admin-table-body" class="divide-y divide-gray-100">
+                        <!-- Rows -->
+                    </tbody>
+                </table>
+            </div>
+            <div id="admin-empty-msg" class="p-10 text-center text-gray-500 hidden-section flex flex-col items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-gray-300 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                এখনও কেউ পরীক্ষায় অংশগ্রহণ করেনি।
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, getDocs, addDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Firebase & Environment Variables
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-quiz-app';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
+            // Mock config to prevent crash if not in immersive env
+            apiKey: "mock-key", projectId: "mock-project"
+        };
+        
+        let app, auth, db;
+        let isDbConnected = false;
+
+        try {
+            app = initializeApp(firebaseConfig);
+            auth = getAuth(app);
+            db = getFirestore(app);
+        } catch(e) {
+            console.error("Firebase init error:", e);
+        }
+
+        // Global Variables
+        window.questionsData = [
+            { id: 1, text: "কোন খাদ্যটি দেহের বৃদ্ধি সাধন ও ক্ষয়পূরণ করে?", options: ["গম", "শুটকি মাছ", "ফলের রস", "চর্বি"], correct: 1, explanation: "শুটকি মাছ আমিষ জাতীয় খাদ্য যা বৃদ্ধি ও ক্ষয়পূরণ করে।" },
+            { id: 2, text: "আমিষে শতকরা কত ভাগ নাইট্রোজেন থাকে?", options: ["১৪", "১৫", "১৬", "১৭"], correct: 2, explanation: "আমিষে ১৬% নাইট্রোজেন থাকে।" },
+            { id: 3, text: "আমাদের খাদ্য তালিকায় কমপক্ষে কত ভাগ প্রাণিজ আমিষ থাকা দরকার?", options: ["২৫", "২০", "১৫", "১০"], correct: 1, explanation: "কমপক্ষে ২০ ভাগ প্রাণিজ আমিষ প্রয়োজন।" },
+            { id: 4, text: "কোনটি উদ্ভিজ্জ আমিষের উৎস?", options: ["চাল", "ডাল", "আলু", "গম"], correct: 1, explanation: "ডাল উদ্ভিজ্জ আমিষ।" },
+            { id: 5, text: "এক শর্করার উৎস কোনটি?", options: ["চিনি", "দুধ", "সবজি", "ফলের রস"], correct: 3, explanation: "ফলের রসে গ্লুকোজ বা এক শর্করা থাকে।" },
+            { id: 6, text: "দ্বি-শর্করার কোনটি?", options: ["দুধ", "মধু", "চাল", "আটা"], correct: 0, explanation: "দুধে ল্যাকটোজ থাকে যা দ্বি-শর্করা।" },
+            { id: 7, text: "কোন শর্করাটি দেহে সর্বাপেক্ষা দ্রুত শোষিত হবে?", options: ["মধু", "চিনি", "ভাত", "আলু"], correct: 0, explanation: "মধুতে গ্লুকোজ ও ফ্রুক্টোজ থাকে যা দ্রুত শোষিত হয়।" },
+            { id: 8, text: "কোন খাদ্য থেকে দ্রুত শক্তি পাওয়া যায়?", options: ["দই", "আখের গুড়", "আমের রস", "ভাত"], correct: 1, explanation: "আখের গুড় শর্করা, তাই এটি দ্রুত শক্তি দেয়।" },
+            { id: 9, text: "দুধের শর্করাকে কী বলে?", options: ["গ্লুকোজ", "সুক্রোজ", "ল্যাকটোজ", "গ্লাইকোজেন"], correct: 2, explanation: "দুধে ল্যাকটোজ থাকে।" },
+            { id: 10, text: "আমাদের দৈনিক খাদ্য তালিকায় কত গ্রাম চর্বি থাকা উচিত?", options: ["১০-২০", "২০-৩০", "৪০-৫০", "৫০-৬০"], correct: 3, explanation: "দৈনিক ৫০-৬০ গ্রাম চর্বি প্রয়োজন।" },
+            { id: 11, text: "পানিতে দ্রবণীয় ভিটামিন কোনটি?", options: ["A", "B", "D", "K"], correct: 1, explanation: "ভিটামিন B ও C পানিতে দ্রবণীয়।" },
+            { id: 12, text: "চর্বিতে দ্রবণীয় ভিটামিন নিচের কোনটিতে পাওয়া যায়?", options: ["মলা মাছ", "কাঁচামরিচ", "কলিজা", "বাঁধাকপি"], correct: 0, explanation: "ছোট মাছে ভিটামিন A ও D থাকে।" },
+            { id: 13, text: "একজন প্রাপ্তবয়স্ক ব্যক্তির দৈনিক কত লিটার পানি পান করা প্রয়োজন?", options: ["২", "৩", "৪", "৫"], correct: 1, explanation: "দৈনিক ২-৩ লিটার পানি পান করা উচিত।" },
+            { id: 14, text: "আদর্শ খাদ্য পিরামিডে সবচেয়ে উপরে থাকে কোনটি?", options: ["রুটি", "মলামাছ", "ডালডা", "লালশাক"], correct: 2, explanation: "ফ্যাট বা স্নেহ জাতীয় খাদ্য (যেমন ডালডা) সবচেয়ে উপরে থাকে।" },
+            { id: 15, text: "খাদ্য পিরামিডের নিচের স্তরের খাদ্য উপাদান কোনটি?", options: ["ভিটামিন", "শর্করা", "স্নেহ", "আমিষ"], correct: 1, explanation: "শর্করা সবচেয়ে বেশি খেতে হয়, তাই এটি নিচে থাকে।" },
+            { id: 16, text: "আয়োডিনের অভাবে কোন গ্রন্থি ফুলে যায়?", options: ["অ্যাড্রিনাল", "থাইমাস", "থাইরয়েড", "প্যারাথাইরয়েড"], correct: 2, explanation: "আয়োডিনের অভাবে থাইরয়েড গ্রন্থি ফুলে গয়টার হয়।" },
+            { id: 17, text: "ইলিশ মাছ নিচের কোন রোগটি প্রতিরোধ করে?", options: ["ডায়াবেটিস", "গয়টার", "এপিলেপসি", "আমাশয়"], correct: 1, explanation: "সামুদ্রিক মাছে (যেমন ইলিশ) আয়োডিন থাকে যা গয়টার প্রতিরোধ করে।" },
+            { id: 18, text: "কোনটি ক্ষতিগ্রস্ত হলে রাতকানা রোগ হয়?", options: ["কোন কোষ", "কর্নিয়া", "লেন্স", "রড কোষ"], correct: 3, explanation: "ভিটামিন A এর অভাবে চোখের রড কোষ ক্ষতিগ্রস্ত হয়।" },
+            { id: 19, text: "রিকেটস রোগ হয় কোন ভিটামিনের অভাবে?", options: ["এ", "বি", "সি", "ডি"], correct: 3, explanation: "ভিটামিন ডি এর অভাবে হাড় দুর্বল হয়ে রিকেটস হয়।" },
+            { id: 20, text: "ভিটামিন 'ডি' এর অভাবে কোন রোগটি হয়?", options: ["রিকেটস", "রক্তশূন্যতা", "গয়টার", "আথ্রাইটিস"], correct: 0, explanation: "হাড়ের গঠনে ভিটামিন ডি অপরিহার্য, অভাবে রিকেটস হয়।" },
+            { id: 21, text: "কোন ভিটামিনের অভাবে রক্তশূন্যতা দেখা দেয়?", options: ["এ", "বি", "সি", "ডি"], correct: 1, explanation: "ভিটামিন B (বিশেষ করে B12) এর অভাবে অ্যানিমিয়া বা রক্তশূন্যতা হয়।" },
+            { id: 22, text: "রাতকানা প্রতিরোধে অধিক পরিমাণে খেতে হবে-", options: ["গাজর", "পাকা আম", "মলামাছ", "সবগুলো"], correct: 3, explanation: "গাজর, পাকা আম, মলামাছ সবটিতেই ভিটামিন A আছে।" },
+            { id: 23, text: "শর্করা ও আমিষের তুলনায় চর্বিতে কতগুণ পরিমাণ ক্যালরি থাকে?", options: ["২", "৩", "৮", "৫"], correct: 0, explanation: "চর্বিতে (৯ কিলোক্যালরি/গ্রাম) শর্করার (৪ কিলোক্যালরি/গ্রাম) দ্বিগুণের বেশি শক্তি থাকে।" },
+            { id: 24, text: "বিএমআই এর মানদণ্ডে সুস্বাস্থ্যের আদর্শ মান কোনটি?", options: ["১৬.৫-১৮.৪", "১৮.৫-২৪.৯", "২৫-২৯.৯", "৩০-৩৪.৯"], correct: 1, explanation: "১৮.৫-২৪.৯ হলো প্রাপ্তবয়স্কদের জন্য সুস্বাস্থ্যের আদর্শ মান।" },
+            { id: 25, text: "সুষম খাদ্যের বৈশিষ্ট্য-", options: ["সহজ পাচ্য", "পানি ও খনিজ লবণ থাকতে হবে", "আমিষ চর্বি শর্করার অনুপাত ৪:২:১", "প্রথম দুটি"], correct: 3, explanation: "সুষম খাদ্য সহজ পাচ্য হওয়া এবং এতে পানি ও খনিজ লবণ থাকা বাঞ্ছনীয়।" },
+            { id: 26, text: "কোন খাবারে ক্যালরির মান বেশি হবে?", options: ["ভাত", "আলু", "রুটি", "খিচুড়ি"], correct: 3, explanation: "খিচুড়িতে চাল, ডাল, তেল একত্রে থাকে তাই ক্যালরি বেশি।" },
+            { id: 27, text: "শর্করার মৌলিক উপাদান হাইড্রোজেন, অক্সিজেন এবং অন্যটি কী?", options: ["নাইট্রোজেন", "কার্বন", "সোডিয়াম", "আয়রন"], correct: 1, explanation: "শর্করার মূল উপাদান কার্বন, হাইড্রোজেন ও অক্সিজেন (C, H, O)।" },
+            { id: 28, text: "কোন খাদ্যের শ্বেতসার সহজে হজম হয়?", options: ["ভাত ও সিদ্ধ আলু", "গম ও চাল", "আলু ও আটা", "ভাত ও আটা"], correct: 0, explanation: "ভাত ও সিদ্ধ আলুর শ্বেতসার সহজে হজমযোগ্য।" },
+            { id: 29, text: "ভোজ্য তেলে কোন ভিটামিন থাকে?", options: ["এ", "বি", "সি", "ডি"], correct: 0, explanation: "ফর্টিফায়েড ভোজ্য তেলে সাধারণত ভিটামিন এ যোগ করা থাকে।" },
+            { id: 30, text: "কলার রস থেকে নিচের কোনটি পাওয়া যায়?", options: ["গ্লুকোজ", "সুক্রোজ", "শ্বেতসার", "গ্লাইকোজেন"], correct: 0, explanation: "ফলের রসে সাধারণত গ্লুকোজ বা মনোস্যাকারাইড থাকে।" }
+        ];
+
+        let currentUser = "";
+        let timerInterval = null;
+        let userAnswers = {};
+        const TOTAL_MINUTES = 20;
+        const ADMIN_PASS = "admin123";
+
+        // Expose functions to window for HTML inline event handlers
+        window.closeModal = function(id) {
+            document.getElementById(id).classList.add('hidden-section');
+        }
+
+        window.showModal = function(id) {
+            document.getElementById(id).classList.remove('hidden-section');
+        }
+
+        window.showCustomAlert = function(msg, title="সতর্কতা") {
+            document.getElementById('alert-title').innerText = title;
+            document.getElementById('alert-message').innerText = msg;
+            window.showModal('alert-modal');
+        }
+
+        window.showLoading = function(text) {
+            document.getElementById('loading-text').innerText = text;
+            window.showModal('loading-overlay');
+        }
+
+        window.hideLoading = function() {
+            window.closeModal('loading-overlay');
+        }
+
+        window.switchScreen = function(screenId) {
+            ['start-screen', 'quiz-screen', 'result-screen', 'admin-screen'].forEach(id => {
+                document.getElementById(id).classList.add('hidden-section');
+            });
+            document.getElementById(screenId).classList.remove('hidden-section');
+            window.scrollTo(0, 0);
+        }
+
+        window.toBnNum = function(num) {
+            const bnDigits = ['০','১','২','৩','৪','৫','৬','৭','৮','৯'];
+            return num.toString().replace(/[0-9]/g, w => bnDigits[w]);
+        }
+
+        async function initAuth() {
+            try {
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+                isDbConnected = true;
+            } catch (error) {
+                console.error("Auth error:", error);
+                // Allow offline play theoretically, but firebase saves will fail.
+            }
+        }
+        
+        // Call initAuth on load
+        initAuth();
+
+        window.attemptStartQuiz = async function() {
+            const nameInput = document.getElementById('student-name').value.trim();
+            if(!nameInput) {
+                window.showCustomAlert("দয়া করে আপনার নাম লিখুন।");
+                return;
+            }
+
+            if (!isDbConnected) {
+                window.showCustomAlert("ডাটাবেসের সাথে কানেক্ট করা যাচ্ছে না। দয়া করে রিলোড দিন।");
+                return;
+            }
+
+            window.showLoading("তথ্য যাচাই করা হচ্ছে...");
+
+            try {
+                // Rule 1: Correct path
+                // Rule 2: Simple query, fetch all and filter locally
+                const resultsRef = collection(db, 'artifacts', appId, 'public', 'data', 'quiz_results');
+                const snapshot = await getDocs(resultsRef);
+                
+                let isDuplicate = false;
+                snapshot.forEach(doc => {
+                    if (doc.data().name.toLowerCase() === nameInput.toLowerCase()) {
+                        isDuplicate = true;
+                    }
+                });
+
+                if (isDuplicate) {
+                    window.hideLoading();
+                    window.showCustomAlert("এই নামে ইতিমধ্যে পরীক্ষা দেওয়া হয়েছে। দয়া করে আপনার নামের সাথে নামের শেষাংশ বা রোল নম্বর যোগ করুন।");
+                    return;
+                }
+
+                // If not duplicate, start session
+                window.hideLoading();
+                startQuizSession(nameInput);
+
+            } catch (error) {
+                window.hideLoading();
+                console.error(error);
+                window.showCustomAlert("ডাটাবেস চেক করতে সমস্যা হয়েছে।");
+            }
+        }
+
+        function startQuizSession(name) {
+            currentUser = name;
+            document.getElementById('display-name').innerText = currentUser;
+            
+            // Persist timer logic
+            const savedName = localStorage.getItem('quiz_user');
+            const savedEndTime = localStorage.getItem('quiz_end_time');
+            
+            let endTimeMs;
+            
+            if (savedName === name && savedEndTime && parseInt(savedEndTime) > Date.now()) {
+                // Resume active session
+                endTimeMs = parseInt(savedEndTime);
+                userAnswers = JSON.parse(localStorage.getItem('quiz_answers') || '{}');
+            } else {
+                // New session
+                endTimeMs = Date.now() + (TOTAL_MINUTES * 60 * 1000);
+                userAnswers = {};
+                localStorage.setItem('quiz_user', name);
+                localStorage.setItem('quiz_end_time', endTimeMs);
+                localStorage.setItem('quiz_answers', JSON.stringify(userAnswers));
+            }
+
+            renderQuestionsUI();
+            window.switchScreen('quiz-screen');
+            runTimer(endTimeMs);
+        }
+
+        function renderQuestionsUI() {
+            const container = document.getElementById('questions-container');
+            container.innerHTML = "";
+
+            window.questionsData.forEach((q, index) => {
+                const qDiv = document.createElement('div');
+                qDiv.className = "bg-white p-5 md:p-8 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow";
+                
+                let html = `<p class="font-bold text-gray-800 text-lg mb-4 flex gap-2"><span class="bg-green-100 text-green-700 px-2 rounded h-fit">${window.toBnNum(index + 1)}.</span> <span>${q.text}</span></p>`;
+                html += `<div class="space-y-3 pl-2 md:pl-10">`;
+                
+                q.options.forEach((opt, optIndex) => {
+                    const isChecked = userAnswers[q.id] === optIndex ? "checked" : "";
+                    html += `
+                        <label class="flex items-center space-x-3 cursor-pointer p-3 rounded-lg border border-transparent hover:border-green-200 hover:bg-green-50 transition-colors ${isChecked ? 'bg-green-50 border-green-300' : 'bg-gray-50'}">
+                            <input type="radio" name="q${q.id}" value="${optIndex}" ${isChecked} onchange="window.saveAnswerToLocal(${q.id}, ${optIndex}, this)" class="w-5 h-5 text-green-600 focus:ring-green-500 border-gray-300">
+                            <span class="text-gray-700 font-medium">${opt}</span>
+                        </label>
+                    `;
+                });
+                
+                html += `</div>`;
+                qDiv.innerHTML = html;
+                container.appendChild(qDiv);
+            });
+        }
+
+        window.saveAnswerToLocal = function(qId, optIndex, radioElem) {
+            userAnswers[qId] = optIndex;
+            localStorage.setItem('quiz_answers', JSON.stringify(userAnswers));
+            
+            // Visual update for the parent label
+            const allLabels = radioElem.closest('.space-y-3').querySelectorAll('label');
+            allLabels.forEach(lbl => {
+                lbl.classList.remove('bg-green-50', 'border-green-300');
+                lbl.classList.add('bg-gray-50', 'border-transparent');
+            });
+            radioElem.closest('label').classList.remove('bg-gray-50', 'border-transparent');
+            radioElem.closest('label').classList.add('bg-green-50', 'border-green-300');
+        }
+
+        function runTimer(endTimeMs) {
+            if (timerInterval) clearInterval(timerInterval);
+            
+            const timerDisplay = document.getElementById('timer-display');
+            
+            function tick() {
+                const now = Date.now();
+                const timeLeft = Math.max(0, endTimeMs - now);
+                
+                if (timeLeft === 0) {
+                    clearInterval(timerInterval);
+                    timerDisplay.innerText = "00:00";
+                    window.showCustomAlert("আপনার সময় শেষ! ফলাফল স্বয়ংক্রিয়ভাবে জমা দেওয়া হচ্ছে।");
+                    setTimeout(() => { window.processSubmission(); }, 2000);
+                    return;
+                }
+
+                const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
+                
+                timerDisplay.innerText = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            }
+            
+            tick();
+            timerInterval = setInterval(tick, 1000);
+        }
+
+        window.promptSubmit = function() {
+            window.showModal('submit-modal');
+        }
+
+        window.processSubmission = async function() {
+            window.closeModal('submit-modal');
+            if(timerInterval) clearInterval(timerInterval);
+            
+            window.showLoading("ফলাফল প্রস্তুত করা হচ্ছে...");
+
+            // Calculate Score
+            let score = 0;
+            window.questionsData.forEach(q => {
+                if (userAnswers[q.id] === q.correct) score++;
+            });
+
+            // Calculate Time Taken
+            const savedEndTime = parseInt(localStorage.getItem('quiz_end_time') || Date.now());
+            const durationMs = TOTAL_MINUTES * 60 * 1000;
+            const startTime = savedEndTime - durationMs;
+            let timeTakenMs = Date.now() - startTime;
+            if(timeTakenMs > durationMs) timeTakenMs = durationMs; // cap at 20 mins
+            if(timeTakenMs < 0) timeTakenMs = 0;
+
+            const mins = Math.floor(timeTakenMs / 60000);
+            const secs = Math.floor((timeTakenMs % 60000) / 1000);
+            const timeStr = `${window.toBnNum(mins)} মি. ${window.toBnNum(secs)} সে.`;
+
+            // Save to Firebase
+            try {
+                if(isDbConnected && auth.currentUser) {
+                    await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'quiz_results'), {
+                        name: currentUser,
+                        score: score,
+                        timeTakenStr: timeStr,
+                        timestamp: new Date().toISOString()
+                    });
+                }
+            } catch(e) {
+                console.error("Firebase save failed:", e);
+                // Proceed to show result even if save fails, but admin won't see it
+            }
+
+            // Clear local session so reload doesn't go back to quiz
+            localStorage.removeItem('quiz_user');
+            localStorage.removeItem('quiz_end_time');
+            localStorage.removeItem('quiz_answers');
+
+            window.hideLoading();
+            renderResultScreen(score, timeStr);
+        }
+
+        function renderResultScreen(score, timeStr) {
+            document.getElementById('result-name-display').innerText = currentUser;
+            document.getElementById('result-score-display').innerText = `${window.toBnNum(score)}/${window.toBnNum(30)}`;
+            document.getElementById('result-time-display').innerText = timeStr;
+
+            const reviewContainer = document.getElementById('review-container');
+            reviewContainer.innerHTML = "";
+
+            window.questionsData.forEach((q, index) => {
+                const userAns = userAnswers[q.id];
+                const isCorrect = userAns === q.correct;
+                const didNotAnswer = userAns === undefined;
+
+                const borderClass = isCorrect ? "border-green-400 bg-green-50" : (didNotAnswer ? "border-gray-300 bg-gray-50" : "border-red-400 bg-red-50");
+                const icon = isCorrect 
+                    ? `<svg class="w-6 h-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>`
+                    : `<svg class="w-6 h-6 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>`;
+
+                let userText = didNotAnswer ? "<span class='text-gray-400 italic'>উত্তর দেওয়া হয়নি</span>" : q.options[userAns];
+
+                let html = `
+                    <div class="p-5 border-l-4 rounded-r-xl shadow-sm ${borderClass}">
+                        <div class="flex justify-between items-start gap-4 mb-3">
+                            <p class="font-bold text-gray-800">${window.toBnNum(index + 1)}. ${q.text}</p>
+                            <div class="mt-1">${didNotAnswer ? '' : icon}</div>
+                        </div>
+                        <div class="text-sm space-y-1 mb-3">
+                            <p><strong>আপনার উত্তর:</strong> <span class="${isCorrect ? 'text-green-700 font-bold' : (didNotAnswer ? '' : 'text-red-600 font-bold line-through')}">${userText}</span></p>
+                            ${!isCorrect ? `<p class="text-green-700"><strong>সঠিক উত্তর:</strong> ${q.options[q.correct]}</p>` : ''}
+                        </div>
+                        <div class="text-sm bg-white p-3 rounded border border-gray-200 text-gray-700 shadow-inner">
+                            <span class="font-bold text-blue-600">ব্যাখ্যা:</span> ${q.explanation}
+                        </div>
+                    </div>
+                `;
+                reviewContainer.innerHTML += html;
+            });
+
+            window.switchScreen('result-screen');
+        }
+
+        window.openAdminPrompt = function() {
+            document.getElementById('admin-pass-input').value = "";
+            window.showModal('admin-modal');
+        }
+
+        window.verifyAdmin = function() {
+            const pass = document.getElementById('admin-pass-input').value;
+            if(pass === ADMIN_PASS) {
+                window.closeModal('admin-modal');
+                loadAdminDashboard();
+            } else {
+                window.closeModal('admin-modal');
+                window.showCustomAlert("ভুল পাসওয়ার্ড!");
+            }
+        }
+
+        async function loadAdminDashboard() {
+            window.switchScreen('admin-screen');
+            window.showLoading("ডাটা লোড হচ্ছে...");
+            
+            const tbody = document.getElementById('admin-table-body');
+            const emptyMsg = document.getElementById('admin-empty-msg');
+            tbody.innerHTML = "";
+            
+            try {
+                if(!auth.currentUser) {
+                    throw new Error("Not authenticated");
+                }
+                
+                const resultsRef = collection(db, 'artifacts', appId, 'public', 'data', 'quiz_results');
+                const snapshot = await getDocs(resultsRef);
+                
+                let results = [];
+                snapshot.forEach(doc => {
+                    results.push(doc.data());
+                });
+
+                window.hideLoading();
+
+                if (results.length === 0) {
+                    emptyMsg.classList.remove('hidden-section');
+                } else {
+                    emptyMsg.classList.add('hidden-section');
+                    
+                    // Sort by timestamp descending
+                    results.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+                    
+                    results.forEach(r => {
+                        const dateObj = new Date(r.timestamp);
+                        const dateStr = isNaN(dateObj) ? '-' : dateObj.toLocaleString('bn-BD');
+                        
+                        tbody.innerHTML += `
+                            <tr class="hover:bg-green-50 transition-colors">
+                                <td class="p-4 border-b font-medium text-gray-800">${r.name}</td>
+                                <td class="p-4 border-b text-center font-bold text-green-600">${window.toBnNum(r.score)}</td>
+                                <td class="p-4 border-b text-center text-blue-600">${r.timeTakenStr}</td>
+                                <td class="p-4 border-b text-right text-xs text-gray-500">${dateStr}</td>
+                            </tr>
+                        `;
+                    });
+                }
+            } catch (error) {
+                window.hideLoading();
+                console.error("Admin fetch error:", error);
+                window.showCustomAlert("ডাটাবেস থেকে তথ্য আনতে সমস্যা হয়েছে।");
+            }
+        }
+        
+        // Final sanity check for active session on load
+        window.addEventListener('DOMContentLoaded', () => {
+            const savedName = localStorage.getItem('quiz_user');
+            const savedEndTime = localStorage.getItem('quiz_end_time');
+            if (savedName && savedEndTime && parseInt(savedEndTime) > Date.now()) {
+                // Return to quiz automatically if session is active
+                startQuizSession(savedName);
+            }
+        });
+
+    </script>
+</body>
+</html>
+```
